@@ -10,16 +10,18 @@ if ! python3 -c "import toml" >/dev/null 2>&1; then
     pip3 install --no-cache-dir toml uv 2>/dev/null || true
 fi
 
-# 2. Fix PyTorch 2.6 schema inference for PEP 585 generics (list[int]) used by comfy-kitchen
+# 2. Fix PyTorch schema inference for PEP 585 generics (list[int]) used by comfy-kitchen
 python3 -c '
-path = "/usr/local/lib/python3.10/dist-packages/torch/_library/infer_schema.py"
+import os, torch
+path = os.path.join(os.path.dirname(torch.__file__), "_library", "infer_schema.py")
 try:
-    content = open(path).read()
-    target = "if annotation_type not in SUPPORTED_PARAM_TYPES.keys():"
-    if "annotation_type.__origin__ is list" not in content and target in content:
-        patch = "if hasattr(annotation_type, \"__origin__\") and annotation_type.__origin__ is list:\n            annotation_type = typing.List[annotation_type.__args__[0]]\n        " + target
-        open(path, "w").write(content.replace(target, patch, 1))
-        print("[Entrypoint] Applied PyTorch PEP-585 schema patch successfully.")
+    if os.path.exists(path):
+        content = open(path).read()
+        target = "if annotation_type not in SUPPORTED_PARAM_TYPES.keys():"
+        if "annotation_type.__origin__ is list" not in content and target in content:
+            patch = "if hasattr(annotation_type, \"__origin__\") and annotation_type.__origin__ is list:\n            annotation_type = typing.List[annotation_type.__args__[0]]\n        " + target
+            open(path, "w").write(content.replace(target, patch, 1))
+            print("[Entrypoint] Applied PyTorch PEP-585 schema patch successfully.")
 except Exception as e:
     print(f"[Entrypoint] Schema patch note: {e}")
 '
