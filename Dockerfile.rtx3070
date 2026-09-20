@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
+FROM nvidia/cuda:12.6.3-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip and install uv
 RUN python3 -m pip install --no-cache-dir --upgrade pip wheel setuptools uv
 
-# Install PyTorch with CUDA 12.4
+# Install latest PyTorch with CUDA 12.6
 RUN python3 -m pip install --no-cache-dir \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu124
+    --index-url https://download.pytorch.org/whl/cu126
 
 WORKDIR /app
 
