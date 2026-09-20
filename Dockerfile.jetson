@@ -1,0 +1,29 @@
+# Dockerfile for NVIDIA Jetson AGX Orin / JetPack 6.x (ARM64 / aarch64)
+# Uses official dusty-nv Jetson ComfyUI container with CUDA & PyTorch pre-built for Tegra
+ARG JETPACK_TAG=r36.4.0
+FROM dustynv/comfyui:${JETPACK_TAG}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    COMFY_DIR=/comfyui
+
+WORKDIR /comfyui
+
+# Install Python tools, huggingface_hub, uv, toml, and requirements for custom nodes
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    python3 -m pip install --no-cache-dir \
+    huggingface_hub \
+    uv \
+    toml \
+    sentencepiece \
+    GitPython
+
+# Create symlink for uniform structure across profiles
+RUN mkdir -p /app && ln -sf /comfyui /app/ComfyUI
+
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 8188
+
+ENTRYPOINT ["/app/entrypoint.sh"]

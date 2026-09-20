@@ -1,9 +1,13 @@
 services:
-  comfyui:
+  # ============================================================================
+  # Profile: NVIDIA GeForce RTX 3070 (x86_64, 8GB VRAM)
+  # ============================================================================
+  comfyui-rtx3070:
+    profiles: ["rtx3070", "3070", "default"]
+    image: comfyui-qwen:rtx3070
     build:
       context: .
-      dockerfile: Dockerfile
-    image: comfyui-qwen:latest
+      dockerfile: Dockerfile.rtx3070
     container_name: comfyui
     restart: unless-stopped
     ports:
@@ -20,6 +24,43 @@ services:
       - ${STORAGE_DIR:-./data}/input:/app/ComfyUI/input
       - ${STORAGE_DIR:-./data}/user:/app/ComfyUI/user
       - ${STORAGE_DIR:-./data}/custom_nodes:/app/ComfyUI/custom_nodes
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # ============================================================================
+  # Profile: NVIDIA Jetson AGX Orin (ARM64 / aarch64, 32GB Unified Memory)
+  # ============================================================================
+  comfyui-jetson:
+    profiles: ["jetson", "orin", "jetson-orin"]
+    image: comfyui-qwen:jetson-orin
+    build:
+      context: .
+      dockerfile: Dockerfile.jetson
+      args:
+        - JETPACK_TAG=${JETPACK_TAG:-r36.4.0}
+    container_name: comfyui
+    runtime: nvidia
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8188}:8188"
+    environment:
+      - CLI_ARGS=${CLI_ARGS:---listen 0.0.0.0 --port 8188 --highvram --reserve-vram 4.0 --fp16-vae}
+      - COMFY_DIR=/comfyui
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./entrypoint.sh:/app/entrypoint.sh
+      - ./workflows:/app/workflows:ro
+      - ${STORAGE_DIR:-./data}/models:/comfyui/models
+      - ${STORAGE_DIR:-./data}/output:/comfyui/output
+      - ${STORAGE_DIR:-./data}/input:/comfyui/input
+      - ${STORAGE_DIR:-./data}/user:/comfyui/user
+      - ${STORAGE_DIR:-./data}/custom_nodes:/comfyui/custom_nodes
     deploy:
       resources:
         reservations:
