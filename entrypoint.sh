@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-# Fix PyTorch 2.6 schema inference for PEP 585 generics (list[int]) used by comfy-kitchen
+# 1. Ensure 'python' command exists
+command -v python >/dev/null 2>&1 || ln -sf $(which python3) /usr/local/bin/python
+
+# 2. Fix PyTorch 2.6 schema inference for PEP 585 generics (list[int]) used by comfy-kitchen
 python3 -c '
 path = "/usr/local/lib/python3.10/dist-packages/torch/_library/infer_schema.py"
 try:
@@ -15,7 +18,29 @@ except Exception as e:
     print(f"[Entrypoint] Schema patch note: {e}")
 '
 
-CLI_ARGS=${CLI_ARGS:-"--listen 0.0.0.0 --port 8188"}
+# 3. Ensure ComfyUI-Manager is installed in custom_nodes
+if [ ! -d "/app/ComfyUI/custom_nodes/ComfyUI-Manager" ]; then
+    echo "[Entrypoint] Installing ComfyUI-Manager in custom_nodes..."
+    git clone --depth 1 https://github.com/ltdrdata/ComfyUI-Manager.git /app/ComfyUI/custom_nodes/ComfyUI-Manager || true
+fi
+
+# 4. Auto-populate Qwen-Image-2.1 workflow templates in user workflows directory
+mkdir -p /app/ComfyUI/user/default/workflows
+if [ -d "/app/workflows" ]; then
+    cp -n /app/workflows/*.json /app/ComfyUI/user/default/workflows/ 2>/dev/null || true
+fi
+
+# 5. Check if Qwen-Image-2.1 models are present
+DIFF_MODEL="/app/ComfyUI/models/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+if [ ! -f "$DIFF_MODEL" ]; then
+    echo "=========================================================================="
+    echo " [WARNING] Qwen-Image-2.1 diffusion model not found!"
+    echo " Target: $DIFF_MODEL"
+    echo " Please run ./download_models.sh on your host machine to download models."
+    echo "=========================================================================="
+fi
+
+CLI_ARGS=${CLI_ARGS:-"--listen 0.0.0.0 --port 8188 --reserve-vram 2.5 --lowvram --fp16-vae"}
 
 echo "=============================================="
 echo " Starting ComfyUI with Qwen-Image-2.1 Support "

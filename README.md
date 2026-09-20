@@ -1,77 +1,76 @@
-# ComfyUI - Qwen-Image-2.1 (Docker)
+# ComfyUI - Qwen-Image-2.1 (Docker Autonome)
 
 Ce projet permet de faire tourner **ComfyUI** avec le modèle **Qwen-Image-2.1** dans un conteneur Docker optimisé avec accélération GPU NVIDIA.
 
+Le projet est entièrement **autonome, portable et prêt à être partagé**.
+
 ---
 
-## 🚀 Démarrage Rapide
+## 🚀 Démarrage en 3 étapes
 
-### 1. Lancer ComfyUI
+### 1. Cloner le projet
+```bash
+git clone <url-du-repo>
+cd ComfyProject
+```
+
+### 2. Télécharger les modèles (automatisé)
+Ce script vérifie et télécharge automatiquement les poids officiels optimisés INT8 ConvRot + CLIP + VAE :
+```bash
+./download_models.sh
+```
+*(Si vous n'avez pas installé `hf` ou Python sur votre machine hôte, le script utilisera automatiquement Docker pour télécharger les modèles).*
+
+### 3. Lancer ComfyUI
 ```bash
 ./start.sh
-# ou directement :
+# ou :
 docker compose up -d
 ```
 
-### 2. Accéder à l'interface
-Ouvrez votre navigateur sur :
-👉 **http://localhost:8188** (ou `http://127.0.0.1:8188`)
-
-### 3. Charger le Workflow Qwen-Image-2.1
-Dans l'interface ComfyUI :
-- Glissez-déposez le fichier [`workflows/Qwen_Image_2_1_t2i.json`](file:///home/abdennebi/Repos/ComfyProject/workflows/Qwen_Image_2_1_t2i.json) directement sur la fenêtre du navigateur, ou
-- Cliquez sur **Workflow** (ou **Load**) dans le menu de droite et sélectionnez `workflows/Qwen_Image_2_1_t2i.json`.
+Ouvrez ensuite votre navigateur sur :
+👉 **http://localhost:8188** (ou `http://<IP-DE-VOTRE-MACHINE>:8188`)
 
 ---
 
-## 🎨 Utilisation & Génération
+## ⚙️ Configuration (.env)
 
-### Modèles installés (optimisés INT8 ConvRot + BF16)
-Les poids officiels optimisés de **Comfy-Org** ont été téléchargés et configurés :
-- **Modèle de diffusion** : `diffusion_models/qwen_image_2.1_int8_convrot.safetensors`
-- **Encodeur de texte (CLIP)** : `text_encoders/qwen3vl_8b_int8_convrot.safetensors`
-- **VAE** : `vae/qwen_image_2.1_vae_bf16.safetensors`
-
-### Paramètres recommandés
-- **Prompt** : Votre description textuelle en anglais ou multilingue.
-- **CFG** : Laissez à **1** (recommandation officielle de l'équipe Qwen-Image-2.1). Ne l'augmentez que si vous utilisez un prompt négatif spécifique.
-- **Steps** : 25 à 40 étapes avec le sampler Euler.
-- **Résolution (ResolutionSelector)** :
-  - Par défaut : 1024x1024 (1 MP)
-  - Support natif 2K : 2048x2048 (4 MP en ratio 1:1)
-
-### Génération d'images avec fond transparent (RGBA)
-Qwen-Image-2.1 supporte nativement la transparence. Entourez votre prompt ainsi :
-```text
-This is an RGBA format image with transparency. [Votre sujet ici]. The image has an alpha channel and a transparent background.
+Pour personnaliser les chemins de stockage ou les paramètres GPU, copiez `.env.example` en `.env` :
+```bash
+cp .env.example .env
 ```
-Et enregistrez au format PNG.
+
+| Variable | Description | Défaut |
+| :--- | :--- | :--- |
+| `STORAGE_DIR` | Dossier hôte pour stocker les modèles et images générées | `./data` |
+| `PORT` | Port d'écoute web | `8188` |
+| `CLI_ARGS` | Arguments ComfyUI (gestion VRAM optimisée pour 8 Go - 16 Go) | `--listen 0.0.0.0 --port 8188 --reserve-vram 2.5 --lowvram --fp16-vae` |
+
+> [!TIP]
+> Si vous avez un disque SSD secondaire ou une partition dédiée avec plus d'espace, définissez par exemple `STORAGE_DIR=/mnt/storage/comfyui` dans votre `.env`.
 
 ---
 
-## 📁 Organisation des dossiers & Stockage
+## 🎨 Utilisation & Workflows
 
-Pour préserver l'espace disque de la partition `/home`, les données volumineuses sont stockées sur `/mnt/storage` et liées via des liens symboliques :
-- [`models/`](file:///home/abdennebi/Repos/ComfyProject/models) -> `/mnt/storage/comfyui/models`
-- [`output/`](file:///home/abdennebi/Repos/ComfyProject/output) -> `/mnt/storage/comfyui/output` (vos images générées)
-- [`custom_nodes/`](file:///home/abdennebi/Repos/ComfyProject/custom_nodes) -> `/mnt/storage/comfyui/custom_nodes` (**ComfyUI-Manager** est inclus)
-- [`workflows/`](file:///home/abdennebi/Repos/ComfyProject/workflows) -> Workflows prédéfinis (Text-to-Image et Image Edit)
+Les workflows sont automatiquement synchronisés dans ComfyUI au démarrage :
+1. Dans l'interface ComfyUI, cliquez sur **Workflow > Open** (ou panneau latéral **Load**).
+2. Sélectionnez **`Qwen_Image_2_1_t2i`** (Text-to-Image) ou **`Qwen_Image_2_1_image_edit`** (Image Edit).
+3. Entrez votre prompt dans le nœud `Text Encode Qwen Image 2.1`.
+4. Cliquez sur **Queue Prompt** (ou `Ctrl + Entrée`).
+
+### Paramètres recommandés pour GPU 8 Go (RTX 3070, etc.) :
+* **Résolution (`ResolutionSelector`)** : Choisissez **1.0 mégapixel** (1024x1024). Évitez le 2K (2048x2048) qui dépasse 8 Go de VRAM.
+* **CFG** : Laissez à **1** (recommandé officiellement par l'équipe Qwen).
+* **Steps** : 25 à 40 étapes avec le sampler `euler`.
+* **Images avec transparence (RGBA)** : Entourez votre prompt par :
+  `This is an RGBA format image with transparency. [Votre description]. The image has an alpha channel and a transparent background.`
 
 ---
 
 ## 🛠 Commandes utiles
 
-- **Voir les logs en direct** :
-  ```bash
-  docker compose logs -f
-  ```
-- **Arrêter ComfyUI** :
-  ```bash
-  ./stop.sh
-  # ou :
-  docker compose down
-  ```
-- **Redémarrer ComfyUI** :
-  ```bash
-  docker compose restart
-  ```
+* **Démarrer** : `./start.sh`
+* **Arrêter** : `./stop.sh`
+* **Voir les logs en direct** : `docker compose logs -f`
+* **Mettre à jour les nœuds** : Utilisez le bouton **Manager** intégré directement dans l'interface ComfyUI.

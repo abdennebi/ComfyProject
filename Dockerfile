@@ -17,10 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
     build-essential \
+    && ln -sf /usr/bin/python3 /usr/local/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN python3 -m pip install --no-cache-dir --upgrade pip wheel setuptools
+# Upgrade pip and install uv
+RUN python3 -m pip install --no-cache-dir --upgrade pip wheel setuptools uv
 
 # Install PyTorch with CUDA 12.4
 RUN python3 -m pip install --no-cache-dir \
@@ -36,7 +37,7 @@ WORKDIR /app/ComfyUI
 
 # Install ComfyUI requirements and extras
 RUN python3 -m pip install --no-cache-dir -r requirements.txt && \
-    python3 -m pip install --no-cache-dir GitPython sentencepiece huggingface_hub
+    python3 -m pip install --no-cache-dir GitPython sentencepiece huggingface_hub toml
 
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh

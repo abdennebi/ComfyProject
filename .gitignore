@@ -1,12 +1,17 @@
-# Output generated images
-output/
-# Cache and virtualenvs
+# Local environment variables
+.env
+
+# Default local data storage directory
+data/
+
+# Local convenience symlinks (used when mapping to external fast drive)
+models
+output
+input
+user
+custom_nodes
+
+# Python / cache
 __pycache__/
 *.pyc
 .cache/
-# User custom logs and settings
-user/__manager/
-user/comfyui.log
-user/*.sqlite
-user/*.sqlite-journal
-user/default/comfy.settings.json

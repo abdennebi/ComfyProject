@@ -7,18 +7,19 @@ services:
     container_name: comfyui
     restart: unless-stopped
     ports:
-      - "8188:8188"
+      - "${PORT:-8188}:8188"
     environment:
-      - CLI_ARGS=--listen 0.0.0.0 --port 8188
+      - CLI_ARGS=${CLI_ARGS:---listen 0.0.0.0 --port 8188 --reserve-vram 2.5 --lowvram --fp16-vae}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./entrypoint.sh:/app/entrypoint.sh
-      - /mnt/storage/comfyui/models:/app/ComfyUI/models
-      - /mnt/storage/comfyui/output:/app/ComfyUI/output
-      - /mnt/storage/comfyui/input:/app/ComfyUI/input
-      - /mnt/storage/comfyui/user:/app/ComfyUI/user
-      - /mnt/storage/comfyui/custom_nodes:/app/ComfyUI/custom_nodes
+      - ./workflows:/app/workflows:ro
+      - ${STORAGE_DIR:-./data}/models:/app/ComfyUI/models
+      - ${STORAGE_DIR:-./data}/output:/app/ComfyUI/output
+      - ${STORAGE_DIR:-./data}/input:/app/ComfyUI/input
+      - ${STORAGE_DIR:-./data}/user:/app/ComfyUI/user
+      - ${STORAGE_DIR:-./data}/custom_nodes:/app/ComfyUI/custom_nodes
     deploy:
       resources:
         reservations:
