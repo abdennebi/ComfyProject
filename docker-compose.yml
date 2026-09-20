@@ -1,0 +1,28 @@
+services:
+  comfyui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: comfyui-qwen:latest
+    container_name: comfyui
+    restart: unless-stopped
+    ports:
+      - "8188:8188"
+    environment:
+      - CLI_ARGS=--listen 0.0.0.0 --port 8188
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./entrypoint.sh:/app/entrypoint.sh
+      - /mnt/storage/comfyui/models:/app/ComfyUI/models
+      - /mnt/storage/comfyui/output:/app/ComfyUI/output
+      - /mnt/storage/comfyui/input:/app/ComfyUI/input
+      - /mnt/storage/comfyui/user:/app/ComfyUI/user
+      - /mnt/storage/comfyui/custom_nodes:/app/ComfyUI/custom_nodes
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

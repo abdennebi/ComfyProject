@@ -1,0 +1,12 @@
+# Output generated images
+output/
+# Cache and virtualenvs
+__pycache__/
+*.pyc
+.cache/
+# User custom logs and settings
+user/__manager/
+user/comfyui.log
+user/*.sqlite
+user/*.sqlite-journal
+user/default/comfy.settings.json
