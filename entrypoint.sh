@@ -4,6 +4,12 @@ set -e
 # 1. Ensure 'python' command exists
 command -v python >/dev/null 2>&1 || ln -sf $(which python3) /usr/local/bin/python
 
+# Ensure ComfyUI-Manager dependencies (toml, uv) are installed
+if ! python3 -c "import toml" >/dev/null 2>&1; then
+    echo "[Entrypoint] Installing ComfyUI-Manager dependencies (toml, uv)..."
+    pip3 install --no-cache-dir toml uv 2>/dev/null || true
+fi
+
 # 2. Fix PyTorch 2.6 schema inference for PEP 585 generics (list[int]) used by comfy-kitchen
 python3 -c '
 path = "/usr/local/lib/python3.10/dist-packages/torch/_library/infer_schema.py"
